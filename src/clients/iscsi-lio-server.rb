@@ -5,6 +5,7 @@ require "cwm/widget"
 require "ui/service_status"
 require "yast"
 require "yast2/execute"
+require "y2firewall/firewalld"
 
 Yast.import "CWM"
 Yast.import "CWMTab"
@@ -23,6 +24,10 @@ module Yast
     include Yast::I18n
     include Yast::UIShortcuts
     include Yast::Logger
+
+    def firewalld
+      Y2Firewall::Firewalld.instance
+    end
 
     def is_root
       Confirm.MustBeRoot
@@ -56,6 +61,7 @@ module Yast
 
     def run
       textdomain "iscsi-lio-server"
+      firewalld.read
       msg = ""
       global_tab = GlobalTab.new
       targets_tab = TargetsTab.new
@@ -66,6 +72,7 @@ module Yast
       ret = CWM.show(contents, caption: _("Yast iSCSI Targets"),next_button: _("Finish"))
       Yast::Wizard.CloseDialog
       if ret == :next
+        firewalld.write
         status = $discovery_auth.fetch_status
         userid = $discovery_auth.fetch_userid
         password = $discovery_auth.fetch_password
